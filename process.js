@@ -132,6 +132,8 @@ for(var i =0; i < lines.length; i++)
 			currentIndex ++;
 			currentRecipe = -1;
 			volumes[currentVolume].items[currentIndex] = {};
+			volumes[currentVolume].items[currentIndex].vol = currentVolume+1;
+			volumes[currentVolume].items[currentIndex].capter = currentCapter+1;
 			volumes[currentVolume].items[currentIndex].index = currentIndex+1;
 			var temp = line.split("】");
 			volumes[currentVolume].items[currentIndex].text = temp[1];
@@ -281,8 +283,8 @@ for(i in comments)
 				if(volumes[currentVolume].items[currentIndex].recipe[r].comment.indexOf(target) >= 0)
 				{
 					found = true;
-					fs.appendFileSync('temp.txt', "\r["+(currentVolume+1)+"."+(currentIndex+1)+"]" + "\r");
-					fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].comment + "\r");
+					//fs.appendFileSync('temp.txt', "\r["+(currentVolume+1)+"."+(currentIndex+1)+"]" + "\r");
+					//fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].comment + "\r");
 
 					volumes[currentVolume].items[currentIndex].recipe[r].comment_comment =
 						volumes[currentVolume].items[currentIndex].recipe[r].comment_comment || [];
@@ -299,8 +301,8 @@ for(i in comments)
 						volumes[currentVolume].items[currentIndex].recipe[r].comment += texts[each];
 					}
 
-					fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].comment + "\r");
-					fs.appendFileSync('temp.txt', comment + "\r");
+					//fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].comment + "\r");
+					//fs.appendFileSync('temp.txt', comment + "\r");
 					break;
 				}
 			}
@@ -315,9 +317,6 @@ for(i in comments)
 }
 
 // split recipes from items
-currentVolume = 0;
-currentIndex = 0;
-currentRecipe = 0;
 for(currentVolume in volumes)
 {
 	for(currentIndex in volumes[currentVolume].items)
@@ -343,7 +342,6 @@ for(currentVolume in volumes)
 						titlePY = newName;
 						break;
 					}
-					console.log(newName);
 					end ++;
 				}
 				recipes[titlePY] = volumes[currentVolume].items[currentIndex].recipe[currentRecipe];
@@ -352,6 +350,79 @@ for(currentVolume in volumes)
 		}
 	}
 }
+/*
+var formatHerbs = function (herbs){
+	var ret = [];
+	var index = 0;
+	var temp = "";
+	var mode = 0;
+	for(var j in herbs)
+	{
+		if(!ret[index])
+		{
+			ret[index] = {};
+			ret[index].herb = "";
+			ret[index].weight = "";
+
+		}
+		switch(mode)
+		{
+			case 0://herb
+
+				break;
+			case 1://weight
+				break;
+			case 2://comment
+				break;
+		}
+		if(herbs[j] == "一" ||
+			herbs[j] == "二" ||
+			herbs[j] == "三" ||
+			herbs[j] == "四" ||
+			herbs[j] == "五" ||
+			herbs[j] == "六" ||
+			herbs[j] == "七" ||
+			herbs[j] == "八" ||
+			herbs[j] == "九" ||
+			herbs[j] == "十"
+			)
+		{
+			if(temp.length != 0)
+			{
+				herbs[index] = {}
+			}
+		}
+	}
+}
+
+for(i in recipes)
+{
+	var herbs = formatHerbs(recipes[i].herbs);
+}
+*/
 // Write result file
 fs.writeFileSync('formatted.txt', JSON.stringify(volumes, null, 2));
 fs.writeFileSync('recipes.txt', JSON.stringify(recipes, null, 2));
+
+if(fs.existsSync("out"))
+{
+	fs.rmdirSync("out");
+}
+fs.mkdirSync("out");
+for(currentVolume in volumes)
+{
+	var path = "out/vol"+(parseInt(currentVolume)+1);
+	fs.mkdirSync(path);
+	fs.writeFileSync(path+"/title.json", JSON.stringify(volumes[currentVolume].title, null, 2));
+	for(currentIndex in volumes[currentVolume].items)
+	{
+
+		fs.writeFileSync(path+"/"+(parseInt(currentIndex)+1)+".json", JSON.stringify(volumes[currentVolume].items[currentIndex], null, 2));
+	}
+}
+
+fs.mkdirSync("out/recipe");
+for(currentRecipe in recipes)
+{
+	fs.writeFileSync("out/recipe/"+currentRecipe+".json", JSON.stringify(recipes[currentRecipe], null, 2));
+}
