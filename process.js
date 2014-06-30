@@ -74,7 +74,11 @@ var getType = function (l){
 		return ITEM;
 	if(l[0] == '\n' || l[0] == '\r')
 		return EMPTY;
-	if((l[0] == "右" && l[1] != "剪") || (l[0] == "即" && l[1] == "前") || (l[0] == "即" && l[1] == "桂"))
+	if((l[0] == "右" ) ||
+		(l[0] == "即" && l[1] == "前") ||
+		(l[0] == "即" && l[1] == "桂") ||
+		(l[0] == "即" && l[1] == "白") ||
+		(l[0] == "（" && l[1] == "麻"))
 		return RECIPE_COMMENT;
 	return NORMAL_CASE;
 };
@@ -147,7 +151,7 @@ for(var i =0; i < lines.length; i++)
 				volumes[currentVolume].items[currentIndex].recipe || [];
 			volumes[currentVolume].items[currentIndex].recipe[currentRecipe] = {};
 			volumes[currentVolume].items[currentIndex].recipe[currentRecipe].title = line;
-			volumes[currentVolume].items[currentIndex].recipe[currentRecipe].herbs = "";
+			volumes[currentVolume].items[currentIndex].recipe[currentRecipe].herbText = "";
 			volumes[currentVolume].items[currentIndex].recipe[currentRecipe].comment = "";
 			break;
 		}
@@ -161,7 +165,7 @@ for(var i =0; i < lines.length; i++)
 					volumes[currentVolume].items[currentIndex].text += line;
 					break;
 				case RECIPE:
-					volumes[currentVolume].items[currentIndex].recipe[currentRecipe].herbs += line;
+					volumes[currentVolume].items[currentIndex].recipe[currentRecipe].herbText += line;
 					break;
 				case RECIPE_COMMENT:
 						volumes[currentVolume].items[currentIndex].recipe[currentRecipe].comment += line;
@@ -255,25 +259,25 @@ for(i in comments)
 					//fs.appendFileSync('temp.txt', comment + "\r");
 					break;
 				}
-				if(volumes[currentVolume].items[currentIndex].recipe[r].herbs.indexOf(target) >= 0)
+				if(volumes[currentVolume].items[currentIndex].recipe[r].herbText.indexOf(target) >= 0)
 				{
 					found = true;
 					//fs.appendFileSync('temp.txt', "\r["+(currentVolume+1)+"."+(currentIndex+1)+"]" + "\r");
 					//fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].herbs + "\r");
 
 					volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment =
-						volumes[currentVolume].items[currentIndex].recipe[r].therbs_comment || [];
+						volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment || [];
 					var length = volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment.length;
 					volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment[length] = {};
 					volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment[length].position
-						= volumes[currentVolume].items[currentIndex].recipe[r].herbs.indexOf(target);
+						= volumes[currentVolume].items[currentIndex].recipe[r].herbText.indexOf(target);
 					volumes[currentVolume].items[currentIndex].recipe[r].herbs_comment[length].comment
 						= comment.split(target)[1];
-					var texts = volumes[currentVolume].items[currentIndex].recipe[r].herbs.split(target);
-					volumes[currentVolume].items[currentIndex].recipe[r].herbs = "";
+					var texts = volumes[currentVolume].items[currentIndex].recipe[r].herbText.split(target);
+					volumes[currentVolume].items[currentIndex].recipe[r].herbText = "";
 					for(var each in texts)
 					{
-						volumes[currentVolume].items[currentIndex].recipe[r].herbs += texts[each];
+						volumes[currentVolume].items[currentIndex].recipe[r].herbText += texts[each];
 					}
 
 					//fs.appendFileSync('temp.txt', volumes[currentVolume].items[currentIndex].recipe[r].herbs + "\r");
@@ -317,6 +321,38 @@ for(i in comments)
 }
 
 // split recipes from items
+var getPY = function (str){
+	var temp = py(str, { style: py.STYLE_NORMAL});
+	var name = "";
+	for(var j in temp)
+	{
+		name += temp[j];
+	}
+	return name;
+}
+var getSPY = function (str){
+	var temp = py(str, { style: py.STYLE_FIRST_LETTER});
+	var name = "";
+	for(var j in temp)
+	{
+		name += temp[j];
+	}
+	return name;
+}
+var getUniqueRecipeName = function (name)
+{
+	var end = 0;
+	for(;;)
+	{
+		var newName = name + end;
+		if(!recipes[newName])
+		{
+			return newName;
+			break;
+		}
+		end ++;
+	}
+}
 for(currentVolume in volumes)
 {
 	for(currentIndex in volumes[currentVolume].items)
@@ -325,85 +361,231 @@ for(currentVolume in volumes)
 		{
 			for(currentRecipe in volumes[currentVolume].items[currentIndex].recipe)
 			{
-				var temp = py(volumes[currentVolume].items[currentIndex].recipe[currentRecipe].title, {style: py.STYLE_FIRST_LETTER});
-				var titlePY = "";
-				// get new title in PY
-				for(i in temp)
-				{
-					titlePY += temp[i];
-				}
-				// Find a unique name
-				var end = 0;
-				for(;;)
-				{
-					var newName = titlePY + end;
-					if(!recipes[newName])
-					{
-						titlePY = newName;
-						break;
-					}
-					end ++;
-				}
+				var titlePY = getUniqueRecipeName(
+					getSPY(volumes[currentVolume].items[currentIndex].recipe[currentRecipe].title));
 				recipes[titlePY] = volumes[currentVolume].items[currentIndex].recipe[currentRecipe];
 				volumes[currentVolume].items[currentIndex].recipe[currentRecipe] = titlePY;
 			}
 		}
 	}
 }
-/*
-var formatHerbs = function (herbs){
-	var ret = [];
-	var index = 0;
-	var temp = "";
-	var mode = 0;
-	for(var j in herbs)
-	{
-		if(!ret[index])
-		{
-			ret[index] = {};
-			ret[index].herb = "";
-			ret[index].weight = "";
 
-		}
-		switch(mode)
-		{
-			case 0://herb
-
-				break;
-			case 1://weight
-				break;
-			case 2://comment
-				break;
-		}
-		if(herbs[j] == "一" ||
-			herbs[j] == "二" ||
-			herbs[j] == "三" ||
-			herbs[j] == "四" ||
-			herbs[j] == "五" ||
-			herbs[j] == "六" ||
-			herbs[j] == "七" ||
-			herbs[j] == "八" ||
-			herbs[j] == "九" ||
-			herbs[j] == "十"
-			)
-		{
-			if(temp.length != 0)
-			{
-				herbs[index] = {}
-			}
-		}
-	}
-}
-
-for(i in recipes)
-{
-	var herbs = formatHerbs(recipes[i].herbs);
-}
-*/
 // Write result file
 fs.writeFileSync('formatted.txt', JSON.stringify(volumes, null, 2));
-fs.writeFileSync('recipes.txt', JSON.stringify(recipes, null, 2));
 
+// collect herbs from recipes
+var herbs = {};
+var startOfWeight = function (str){
+	if(str[0] == "一" ||
+		str[0] == "二" ||
+		str[0] == "三" ||
+		str[0] == "四" ||
+		(str[0] == "五" && str[1] != "味") ||
+		str[0] == "六" ||
+		str[0] == "七" ||
+		str[0] == "八" ||
+		str[0] == "九" ||
+		str[0] == "十" ||
+		(str[0] == "百" && str[1] != "合") ||
+		str[0] == "兩")
+		return true;
+	if((str[0] == "半" && str[1] != "夏") ||
+		(str[0] == "雞" && str[1] == "子" && str[2] == "大") ||
+		(str[0] == "如" && str[1] == "指") ||
+		(str[0] == "如" && str[1] == "雞"))
+		return true;
+	return false;
+}
+var isUnit = function (singleChar){
+	if(singleChar == "兩" ||
+		singleChar == "枚" ||
+		singleChar == "升" ||
+		singleChar == "片" ||
+		singleChar == "合" ||
+		singleChar == "斤" ||
+		singleChar == "個" ||
+		singleChar == "粒" ||
+		singleChar == "斗" ||
+		singleChar == "分" ||
+		singleChar == "銖" ||
+		singleChar == "把" ||
+		singleChar == "錢" ||
+		singleChar == "莖" ||
+		singleChar == "許" ||
+		singleChar == "大" ||
+		singleChar == "只" ||
+		singleChar == "匙")
+		return true;
+	return false;
+}
+var findEndOfUnit = function (str){
+	if(!startOfWeight(str))
+		return -1;
+	for(var n = 0; n < str.length; n ++){
+		//console.log(i);
+		if(isUnit(str[n])){
+			if(str[n+1] == "半" && str[n+2] != "夏")
+				return n+2;
+			return n+1;
+		}
+	}
+	return str.length + 1;
+}
+
+var startOfComment = function (str){
+	if(str[0] == "（" ||
+		str[0] == "碎")
+		return true;
+	if((str[0] == "熬" && str[1] == "令"))
+		return true;
+	if((str[0] == "去" && str[1] == "目"))
+		return true;
+	if((str[0] == "大" && str[1] == "者"))
+		return true;
+	return false;
+}
+
+var findEndOfComment = function (str){
+	if(!startOfComment(str))
+		return -1;
+	for(var m = 0; m < str.length; m ++){
+		if(str[m] == "）"){
+			if(str[m+1] == "碎")
+				return m+2;
+			return m+1;
+		}
+		if((str[m] == "黃" && str[m+1] == "色") ||
+			(str[m] == "目" && str[m+1] == "汗" && str[m+2] != "）") ||
+			(str[m] == "大" && str[m+1] == "者"))
+			return m+2;
+	}
+	return str.length + 1;
+}
+
+//split and build herbs
+//var herbCollection = "";
+var herbInPY;
+for(i in recipes)
+{
+	if(recipes[i].herbText == "")
+		continue;
+	// bypass "各"
+	if(recipes[i].herbText.indexOf("各"))
+		continue;
+	var herbStr = recipes[i].herbText;
+	var herbName = "";
+	var herbsIndex = -1;
+	for(j = 0; j < herbStr.length; j++)
+	{
+		if(startOfWeight(herbStr.slice(j)))
+		{
+			if(herbName != ""){
+				// OK, found herbs, build herbs list
+				herbInPY = getPY(herbName);
+				if(!herbs[herbInPY])
+					herbs[herbInPY] = herbName;
+				recipes[i].herbs = recipes[i].herbs || [];
+				if(herbsIndex == -1 || recipes[i].herbs[herbsIndex].herb)
+				{
+					herbsIndex ++;
+					recipes[i].herbs[herbsIndex] = {};
+					recipes[i].herbs[herbsIndex].herb = herbInPY;
+				}
+			}
+			if(herbsIndex == -1)
+			{
+				console.log( JSON.stringify(recipes[i], null, 2));
+				continue;
+			}
+			var q = j;
+			j+=findEndOfUnit(herbStr.slice(j)) -1;
+			recipes[i].herbs[herbsIndex].weight = herbStr.slice(q, j+1);
+			herbName = "";
+			continue;
+		}
+		if(startOfComment(herbStr.slice(j)))
+		{
+			var q = j;
+			j+=findEndOfComment(herbStr.slice(j)) -1;
+
+			recipes[i].herbs = recipes[i].herbs || [];
+			if(herbsIndex == -1 || herbName != "")
+			{
+				herbInPY = getPY(herbName);
+				if(!herbs[herbInPY])
+					herbs[herbInPY] = herbName;
+				herbsIndex ++;
+				recipes[i].herbs[herbsIndex] = {};
+				recipes[i].herbs[herbsIndex].herb = herbInPY;
+			}
+			recipes[i].herbs[herbsIndex].comment = herbStr.slice(q, j+1);
+			herbName = "";
+			continue;
+		}
+//		if(herbStr[j] == "各")
+//		{
+//			herbName = "";
+//			console.log( JSON.stringify(recipes[i], null, 2));
+//			continue;
+//		}
+		herbName += herbStr[j];
+	}
+	// TODO: Combind and compare the results.
+}
+
+fs.writeFileSync('recipes.txt', JSON.stringify(recipes, null, 2));
+fs.writeFileSync('herbs.txt', JSON.stringify(herbs, null, 2));
+
+/*
+for(i in recipes)
+{
+	var herbStr = recipes[i].herbText;
+	recipes[i].herbs = [];
+	var herbIndex = -1;
+	var charIndex = 0;
+	var herb = "";
+	var count = 0;
+	for(j = 0; j < herbStr.length; j++)
+	{
+		herb += herbStr[j];
+		var herbPY = getPY(herb);
+		if(herbs[herbPY])
+		{
+			herb = "";
+			continue;
+		}
+		if(startOfWeight(herb))
+		{
+			var len = findEndOfUnit(herbStr.slice(j));
+			if(len<0)
+				continue;
+			herb = herbStr.slice(j, j+len);
+			j += len;
+			console.log(herb);
+			herb = "";
+			continue;
+		}
+		if(startOfComment(herbStr.slice(j)))
+		{
+			var len = findEndOfComment(herbStr.slice(j));
+			if(len<0)
+				continue;
+			herb = herbStr.slice(j, j+len);
+			j += len;
+			console.log(herb);
+			herb = "";
+			continue;
+		}
+	}
+	if(herb != "")
+	{
+		//console.log(herb);
+	}
+}
+*/
+return;
+
+// write final result
 if(fs.existsSync("out"))
 {
 	fs.rmdirSync("out");
