@@ -387,7 +387,8 @@ var startOfWeight = function (str){
 		str[0] == "九" ||
 		str[0] == "十" ||
 		(str[0] == "百" && str[1] != "合") ||
-		str[0] == "兩")
+		str[0] == "兩" ||
+		str[0] == "少")
 		return true;
 	if((str[0] == "半" && str[1] != "夏") ||
 		(str[0] == "雞" && str[1] == "子" && str[2] == "大") ||
@@ -414,6 +415,7 @@ var isUnit = function (singleChar){
 		singleChar == "許" ||
 		singleChar == "大" ||
 		singleChar == "只" ||
+		singleChar == "許" ||
 		singleChar == "匙")
 		return true;
 	return false;
@@ -425,6 +427,8 @@ var findEndOfUnit = function (str){
 		//console.log(i);
 		if(isUnit(str[n])){
 			if(str[n+1] == "半" && str[n+2] != "夏")
+				return n+2;
+			if(str[n] == "錢" && str[n+1] == "匙")
 				return n+2;
 			return n+1;
 		}
@@ -463,22 +467,47 @@ var findEndOfComment = function (str){
 }
 
 //split and build herbs
-//var herbCollection = "";
+var combinRecipe = function (recipe){
+	var ret = "";
+	for(var i in recipe){
+		ret += herbs[recipe[i].herb];
+		if(recipe[i].weight_prefix)
+			ret += recipe[i].weight_prefix;
+		if(recipe[i].weight)
+			ret += weights[recipe[i].weight];
+		if(recipe[i].weight_postfix)
+			ret += recipe[i].weight_postfix;
+		if(recipe[i].comment)
+			ret += recipe[i].comment;
+	}
+	return ret;
+}
+
+// TODO: items with "各" "等分" and items without weight
+// TODO: comments?
 var herbInPY;
+var weightInPY;
+var weights = {};
 for(i in recipes)
 {
 	if(recipes[i].herbText == "")
 		continue;
 	// bypass "各"
-	if(recipes[i].herbText.indexOf("各"))
+	if(recipes[i].herbText.indexOf('各') >= 0 ||
+		recipes[i].herbText.indexOf('等分') >= 0)
+	{
+		console.log(recipes[i].herbText);
 		continue;
+	}
 	var herbStr = recipes[i].herbText;
 	var herbName = "";
 	var herbsIndex = -1;
+	var foundWeight = false;
 	for(j = 0; j < herbStr.length; j++)
 	{
 		if(startOfWeight(herbStr.slice(j)))
 		{
+			foundWeight = true;
 			if(herbName != ""){
 				// OK, found herbs, build herbs list
 				herbInPY = getPY(herbName);
@@ -492,14 +521,10 @@ for(i in recipes)
 					recipes[i].herbs[herbsIndex].herb = herbInPY;
 				}
 			}
-			if(herbsIndex == -1)
-			{
-				console.log( JSON.stringify(recipes[i], null, 2));
-				continue;
-			}
 			var q = j;
 			j+=findEndOfUnit(herbStr.slice(j)) -1;
-			recipes[i].herbs[herbsIndex].weight = herbStr.slice(q, j+1);
+			recipes[i].herbs[herbsIndex].weight = recipes[i].herbs[herbsIndex].weight || "";
+			recipes[i].herbs[herbsIndex].weight += herbStr.slice(q, j+1);
 			herbName = "";
 			continue;
 		}
@@ -517,73 +542,50 @@ for(i in recipes)
 				herbsIndex ++;
 				recipes[i].herbs[herbsIndex] = {};
 				recipes[i].herbs[herbsIndex].herb = herbInPY;
+				recipes[i].herbs[herbsIndex].weight_prefix = herbStr.slice(q, j+1);
 			}
-			recipes[i].herbs[herbsIndex].comment = herbStr.slice(q, j+1);
+			else
+			{
+				if(recipes[i].herbs[herbsIndex].comment)
+				{
+					recipes[i].herbs[herbsIndex].weight_postfix = recipes[i].herbs[herbsIndex].comment;
+					recipes[i].herbs[herbsIndex].comment = herbStr.slice(q, j+1);
+				}
+				else
+					recipes[i].herbs[herbsIndex].comment = herbStr.slice(q, j+1);
+
+			}
 			herbName = "";
 			continue;
 		}
-//		if(herbStr[j] == "各")
-//		{
-//			herbName = "";
-//			console.log( JSON.stringify(recipes[i], null, 2));
-//			continue;
-//		}
 		herbName += herbStr[j];
 	}
-	// TODO: Combind and compare the results.
+	if(!foundWeight)
+	{
+		delete recipes[i].herbs;
+		console.log(recipes[i].herbText);
+		continue;
+	}
+	for(j in recipes[i].herbs)
+	{
+		weightInPY = getPY(recipes[i].herbs[j].weight);
+		if(!weights[weightInPY])
+			weights[weightInPY] = recipes[i].herbs[j].weight;
+		recipes[i].herbs[j].weight = weightInPY;
+	}
+	// Combind and compare the results.
+	var combin = combinRecipe(recipes[i].herbs);
+	if(combin != recipes[i].herbText)
+	{
+		console.log(combin);
+		console.log(recipes[i].herbText);
+	}
 }
 
 fs.writeFileSync('recipes.txt', JSON.stringify(recipes, null, 2));
 fs.writeFileSync('herbs.txt', JSON.stringify(herbs, null, 2));
+fs.writeFileSync('weights.txt', JSON.stringify(weights, null, 2));
 
-/*
-for(i in recipes)
-{
-	var herbStr = recipes[i].herbText;
-	recipes[i].herbs = [];
-	var herbIndex = -1;
-	var charIndex = 0;
-	var herb = "";
-	var count = 0;
-	for(j = 0; j < herbStr.length; j++)
-	{
-		herb += herbStr[j];
-		var herbPY = getPY(herb);
-		if(herbs[herbPY])
-		{
-			herb = "";
-			continue;
-		}
-		if(startOfWeight(herb))
-		{
-			var len = findEndOfUnit(herbStr.slice(j));
-			if(len<0)
-				continue;
-			herb = herbStr.slice(j, j+len);
-			j += len;
-			console.log(herb);
-			herb = "";
-			continue;
-		}
-		if(startOfComment(herbStr.slice(j)))
-		{
-			var len = findEndOfComment(herbStr.slice(j));
-			if(len<0)
-				continue;
-			herb = herbStr.slice(j, j+len);
-			j += len;
-			console.log(herb);
-			herb = "";
-			continue;
-		}
-	}
-	if(herb != "")
-	{
-		//console.log(herb);
-	}
-}
-*/
-return;
 
 // write final result
 if(fs.existsSync("out"))
@@ -608,3 +610,6 @@ for(currentRecipe in recipes)
 {
 	fs.writeFileSync("out/recipe/"+currentRecipe+".json", JSON.stringify(recipes[currentRecipe], null, 2));
 }
+//TODO:
+// comments in recipes
+// some recipes not formatted yet.
