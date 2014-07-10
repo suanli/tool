@@ -183,6 +183,10 @@ for(var i =0; i < lines.length; i++)
 
 	}
 }
+if(currentVolume >= 0)
+{
+	volumes[currentVolume].title.capterRange[currentCapter].end = currentIndex+1;
+}
 
 //Process comments
 var comments = fs.readFileSync("comments.txt", "utf8");
