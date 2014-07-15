@@ -597,17 +597,20 @@ if(fs.existsSync("out"))
 	fs.rmdirSync("out");
 }
 fs.mkdirSync("out");
+var content = [];
 for(currentVolume in volumes)
 {
 	var path = "out/vol"+(parseInt(currentVolume)+1);
 	fs.mkdirSync(path);
 	fs.writeFileSync(path+"/title.json", JSON.stringify(volumes[currentVolume].title, null, 2));
+  content[currentVolume] = volumes[currentVolume].title;
 	for(currentIndex in volumes[currentVolume].items)
 	{
-
 		fs.writeFileSync(path+"/"+(parseInt(currentIndex)+1)+".json", JSON.stringify(volumes[currentVolume].items[currentIndex], null, 2));
 	}
 }
+
+fs.writeFileSync("out/content.json", JSON.stringify(content, null, 2));
 
 fs.mkdirSync("out/recipe");
 for(currentRecipe in recipes)
