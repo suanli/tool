@@ -603,7 +603,7 @@ for(currentVolume in volumes)
 	var path = "out/vol"+(parseInt(currentVolume)+1);
 	fs.mkdirSync(path);
 	fs.writeFileSync(path+"/title.json", JSON.stringify(volumes[currentVolume].title, null, 2));
-  content[currentVolume] = volumes[currentVolume].title;
+    content[currentVolume] = volumes[currentVolume].title;
 	for(currentIndex in volumes[currentVolume].items)
 	{
 		fs.writeFileSync(path+"/"+(parseInt(currentIndex)+1)+".json", JSON.stringify(volumes[currentVolume].items[currentIndex], null, 2));
@@ -612,11 +612,61 @@ for(currentVolume in volumes)
 
 fs.writeFileSync("out/content.json", JSON.stringify(content, null, 2));
 
+
 fs.mkdirSync("out/recipe");
 for(currentRecipe in recipes)
 {
 	fs.writeFileSync("out/recipe/"+currentRecipe+".json", JSON.stringify(recipes[currentRecipe], null, 2));
 }
+
+// Output backend seed data format
+var seedData = {};
+var otherContent = [];
+var volIndex = 0;
+for(curr in content)
+{
+	otherContent[otherContent.length] = {};
+	otherContent[otherContent.length-1].volumeIndex = ++volIndex;
+	otherContent[otherContent.length-1].capterIndex = 0;
+	otherContent[otherContent.length-1].title = content[curr].volumeTitle;
+	var capterIndex = 1;
+	for(capter in content[curr].capterTitle)
+	{
+		otherContent[otherContent.length] = {};
+		otherContent[otherContent.length-1].volumeIndex = volIndex;
+		otherContent[otherContent.length-1].capterIndex = capterIndex++;
+		otherContent[otherContent.length-1].title = content[curr].capterTitle[capter];
+	}
+}
+
+var otherText = [];
+for(currentVolume in volumes)
+{
+	content[currentVolume] = volumes[currentVolume].title;
+	for(currentIndex in volumes[currentVolume].items)
+	{
+		otherText[otherText.length] = {};
+		otherText[otherText.length-1].vol = volumes[currentVolume].items[currentIndex].vol;
+		otherText[otherText.length-1].chapter = volumes[currentVolume].items[currentIndex].capter;
+		otherText[otherText.length-1].index = volumes[currentVolume].items[currentIndex].index;
+		otherText[otherText.length-1].text = volumes[currentVolume].items[currentIndex].text;
+		if(volumes[currentVolume].items[currentIndex].text_comment)
+		{
+			otherText[otherText.length-1].text_comment =
+				JSON.stringify(volumes[currentVolume].items[currentIndex].text_comment);
+		}
+		if(volumes[currentVolume].items[currentIndex].recipe)
+		{
+			otherText[otherText.length-1].recipe =
+				JSON.stringify(volumes[currentVolume].items[currentIndex].recipe);
+		}
+	}
+}
+
+seedData.ContentModel = otherContent;
+seedData.TextModel = otherText;
+
+fs.writeFileSync("out/seedData.json", JSON.stringify(seedData, null, 2));
 //TODO:
 // comments in recipes
 // some recipes not formatted yet.
