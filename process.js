@@ -88,7 +88,7 @@ var getType = function (l){
 var volumes = [];
 var recipes = {};
 var currentVolume = -1;
-var currentCapter = -1;
+var currentchapter = -1;
 var currentIndex = -1;
 var recipeMode = 0;
 var currentRecipe = -1;
@@ -102,16 +102,16 @@ for(var i =0; i < lines.length; i++)
 		{
 			if(currentVolume >= 0)
 			{
-				volumes[currentVolume].title.capterRange[currentCapter].end = currentIndex+1;
+				volumes[currentVolume].title.chapterRange[currentchapter].end = currentIndex+1;
 			}
 			currentVolume ++;
 			volumes[currentVolume] = {
 				title: {}
 			};
 			volumes[currentVolume].items = [];
-			volumes[currentVolume].title.capterRange = [];
-			volumes[currentVolume].title.capterTitle = [];
-			currentCapter = -1;
+			volumes[currentVolume].title.chapterRange = [];
+			volumes[currentVolume].title.chapterTitle = [];
+			currentchapter = -1;
 			currentIndex = -1;
 			volumes[currentVolume].title.volumeIndex = currentVolume+1;
 			volumes[currentVolume].title.volumeTitle = line;
@@ -120,14 +120,14 @@ for(var i =0; i < lines.length; i++)
 		}
 		case TITLE:
 		{
-			if(currentCapter >= 0)
+			if(currentchapter >= 0)
 			{
-				volumes[currentVolume].title.capterRange[currentCapter].end = currentIndex+1;
+				volumes[currentVolume].title.chapterRange[currentchapter].end = currentIndex+1;
 			}
-			currentCapter ++;
-			volumes[currentVolume].title.capterTitle[currentCapter] = line;
-			volumes[currentVolume].title.capterRange[currentCapter] = {start: "", end: ""};
-			volumes[currentVolume].title.capterRange[currentCapter].start = currentIndex + 1 + 1;
+			currentchapter ++;
+			volumes[currentVolume].title.chapterTitle[currentchapter] = line;
+			volumes[currentVolume].title.chapterRange[currentchapter] = {start: "", end: ""};
+			volumes[currentVolume].title.chapterRange[currentchapter].start = currentIndex + 1 + 1;
 			break;
 		}
 		case ITEM:
@@ -137,7 +137,7 @@ for(var i =0; i < lines.length; i++)
 			currentRecipe = -1;
 			volumes[currentVolume].items[currentIndex] = {};
 			volumes[currentVolume].items[currentIndex].vol = currentVolume+1;
-			volumes[currentVolume].items[currentIndex].capter = currentCapter+1;
+			volumes[currentVolume].items[currentIndex].chapter = currentchapter+1;
 			volumes[currentVolume].items[currentIndex].index = currentIndex+1;
 			var temp = line.split("】");
 			volumes[currentVolume].items[currentIndex].text = temp[1];
@@ -185,7 +185,7 @@ for(var i =0; i < lines.length; i++)
 }
 if(currentVolume >= 0)
 {
-	volumes[currentVolume].title.capterRange[currentCapter].end = currentIndex+1;
+	volumes[currentVolume].title.chapterRange[currentchapter].end = currentIndex+1;
 }
 
 //Process comments
@@ -627,15 +627,15 @@ for(curr in content)
 {
 	otherContent[otherContent.length] = {};
 	otherContent[otherContent.length-1].volumeIndex = ++volIndex;
-	otherContent[otherContent.length-1].capterIndex = 0;
+	otherContent[otherContent.length-1].chapterIndex = 0;
 	otherContent[otherContent.length-1].title = content[curr].volumeTitle;
-	var capterIndex = 1;
-	for(capter in content[curr].capterTitle)
+	var chapterIndex = 1;
+	for(chapter in content[curr].chapterTitle)
 	{
 		otherContent[otherContent.length] = {};
-		otherContent[otherContent.length-1].volumeIndex = volIndex;
-		otherContent[otherContent.length-1].capterIndex = capterIndex++;
-		otherContent[otherContent.length-1].title = content[curr].capterTitle[capter];
+		otherContent[otherContent.length-1].vol = volIndex;
+		otherContent[otherContent.length-1].chapter = chapterIndex++;
+		otherContent[otherContent.length-1].title = content[curr].chapterTitle[chapter];
 	}
 }
 
@@ -647,7 +647,7 @@ for(currentVolume in volumes)
 	{
 		otherText[otherText.length] = {};
 		otherText[otherText.length-1].vol = volumes[currentVolume].items[currentIndex].vol;
-		otherText[otherText.length-1].chapter = volumes[currentVolume].items[currentIndex].capter;
+		otherText[otherText.length-1].chapter = volumes[currentVolume].items[currentIndex].chapter;
 		otherText[otherText.length-1].index = volumes[currentVolume].items[currentIndex].index;
 		otherText[otherText.length-1].text = volumes[currentVolume].items[currentIndex].text;
 		if(volumes[currentVolume].items[currentIndex].text_comment)
