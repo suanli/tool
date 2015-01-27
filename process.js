@@ -586,17 +586,35 @@ for(i in recipes)
 	}
 }
 
-fs.writeFileSync('recipes.txt', JSON.stringify(recipes, null, 2));
-fs.writeFileSync('herbs.txt', JSON.stringify(herbs, null, 2));
-fs.writeFileSync('weights.txt', JSON.stringify(weights, null, 2));
-
-
 // write final result
+
+var deleteFolderRecursive = function(path) {
+    var files = [];
+    if( fs.existsSync(path) ) {
+        files = fs.readdirSync(path);
+        files.forEach(function(file,index){
+            var curPath = path + "/" + file;
+            if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+};
 if(fs.existsSync("out"))
 {
-	fs.rmdirSync("out");
+    deleteFolderRecursive("out");
 }
+
 fs.mkdirSync("out");
+
+fs.writeFileSync('out/herbs.json', JSON.stringify(herbs, null, 2));
+fs.writeFileSync('out/weights.json', JSON.stringify(weights, null, 2));
+
+
+
 var content = [];
 for(currentVolume in volumes)
 {
@@ -626,8 +644,8 @@ var volIndex = 0;
 for(curr in content)
 {
 	otherContent[otherContent.length] = {};
-	otherContent[otherContent.length-1].volumeIndex = ++volIndex;
-	otherContent[otherContent.length-1].chapterIndex = 0;
+	otherContent[otherContent.length-1].vol = ++volIndex;
+	otherContent[otherContent.length-1].chapter = 0;
 	otherContent[otherContent.length-1].title = content[curr].volumeTitle;
 	var chapterIndex = 1;
 	for(chapter in content[curr].chapterTitle)
@@ -663,8 +681,30 @@ for(currentVolume in volumes)
 	}
 }
 
+var otherRecipe = [];
+for(var currentRecipe in recipes)
+{
+    otherRecipe[otherRecipe.length] = {};
+    otherRecipe[otherRecipe.length-1].index = currentRecipe;
+    otherRecipe[otherRecipe.length-1].title = recipes[currentRecipe].title;
+    otherRecipe[otherRecipe.length-1].herbText = recipes[currentRecipe].herbText;
+    otherRecipe[otherRecipe.length-1].comment = recipes[currentRecipe].comment;
+    otherRecipe[otherRecipe.length-1].herbs = recipes[currentRecipe].herbs;
+}
+
+var otherWeight = [];
+otherWeight[0] = {};
+otherWeight[0].text = JSON.stringify(weights, null, 2);
+
+var otherHerb = [];
+otherHerb[0] = {};
+otherHerb[0].text = JSON.stringify(herbs, null, 2);
+
 seedData.ContentModel = otherContent;
 seedData.TextModel = otherText;
+seedData.RecipeModel = otherRecipe;
+seedData.WeightModel = otherWeight;
+seedData.HerbModel = otherHerb;
 
 fs.writeFileSync("out/seedData.json", JSON.stringify(seedData, null, 2));
 //TODO:
