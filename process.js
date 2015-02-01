@@ -644,17 +644,17 @@ var volIndex = 0;
 for(curr in content)
 {
 	otherContent[otherContent.length] = {};
-	otherContent[otherContent.length-1].vol = ++volIndex;
-	otherContent[otherContent.length-1].chapter = 0;
+	otherContent[otherContent.length-1].index = ++volIndex;
 	otherContent[otherContent.length-1].title = content[curr].volumeTitle;
+    otherContent[otherContent.length-1].chapters = [];
 	var chapterIndex = 1;
 	for(chapter in content[curr].chapterTitle)
 	{
-		otherContent[otherContent.length] = {};
-		otherContent[otherContent.length-1].vol = volIndex;
-		otherContent[otherContent.length-1].chapter = chapterIndex++;
-		otherContent[otherContent.length-1].title = content[curr].chapterTitle[chapter];
+        otherContent[otherContent.length-1].chapters[chapter] = {}
+        otherContent[otherContent.length-1].chapters[chapter].index = chapterIndex++;
+        otherContent[otherContent.length-1].chapters[chapter].title = content[curr].chapterTitle[chapter];
 	}
+    otherContent[otherContent.length-1].chapters = JSON.stringify(otherContent[otherContent.length-1].chapters, null, 2);
 }
 
 var otherText = [];
@@ -689,16 +689,16 @@ for(var currentRecipe in recipes)
     otherRecipe[otherRecipe.length-1].title = recipes[currentRecipe].title;
     otherRecipe[otherRecipe.length-1].herbText = recipes[currentRecipe].herbText;
     otherRecipe[otherRecipe.length-1].comment = recipes[currentRecipe].comment;
-    otherRecipe[otherRecipe.length-1].herbs = recipes[currentRecipe].herbs;
+    otherRecipe[otherRecipe.length-1].herbs = JSON.stringify(recipes[currentRecipe].herbs, null, 1);
 }
 
 var otherWeight = [];
 otherWeight[0] = {};
-otherWeight[0].text = JSON.stringify(weights, null, 2);
+otherWeight[0].text = JSON.stringify(weights, null, 1);
 
 var otherHerb = [];
 otherHerb[0] = {};
-otherHerb[0].text = JSON.stringify(herbs, null, 2);
+otherHerb[0].text = JSON.stringify(herbs, null, 1);
 
 seedData.ContentModel = otherContent;
 seedData.TextModel = otherText;
@@ -706,7 +706,7 @@ seedData.RecipeModel = otherRecipe;
 seedData.WeightModel = otherWeight;
 seedData.HerbModel = otherHerb;
 
-fs.writeFileSync("out/seedData.json", JSON.stringify(seedData, null, 2));
+fs.writeFileSync("out/seedData.json", JSON.stringify(seedData, null, 1));
 //TODO:
 // comments in recipes
 // some recipes not formatted yet.
